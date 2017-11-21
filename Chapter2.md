@@ -309,4 +309,15 @@ latest: digest: sha256:1bdbf39903764c5132da5e5a71c4a14bf005c633c8caee4f29d70b07f
 CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS                    NAMES
 73409f39c148        daehyung/kubia      "/bin/sh -c 'node ..."   6 seconds ago       Up 6 seconds        0.0.0.0:8080->8080/tcp   focused_nobel
 ```
+## 2.2 Kubernates 클러스터 설정 ##
 
+숙련된 리눅스와 네트워크 관리자가 아니라면 완벽한 멀티 노드 Kubernates 클러스터를 배포하기란 쉽지 않다. Kubernates는 단일화된(flat) 네트워크 공간을 통해 내부의 모든 컨테이너들이 연결될 수 있도록 하기 위해, 적절한 네트워크 설정을 요구하며, 여러 물리 혹은 가상 머신에 걸쳐 설치하게된다.
+Kubernates 클러스터 설치는 매우 길고 다양한 방법들이 존재한다. 자세한 문서는 http://kubernates.io 에 소개하고 있다.
+
+> 책에서는 로컬머신에 Single-Node Kubernates 클러스터와 Google Container Engine(GKE)에 설치하는 법이 기술되어있으나 여기에서는 Appendix B에 소개하고 있는 kubeadmin 툴을 통하여 설치하는 법만 포함하도록 한다.
+
+ 
+
+
+
+ 
