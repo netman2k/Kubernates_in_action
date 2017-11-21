@@ -3,6 +3,8 @@ echo -e "\nDisabling SELinux..."
 setenforce 0
 sed -i 's/^\(SELinux=\)Enforcing/\1disabled/' /etc/selinux/config
 
+echo -e "\nDisabling swap..."
+swapoff -a
 
 echo -e "\nDisabling FirewallD..."
 systemctl disable firewalld && systemctl stop $_
