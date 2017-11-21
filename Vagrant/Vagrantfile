@@ -1,0 +1,45 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+MEMORY="2048"
+
+if Gem::Version.new(::Vagrant::VERSION) < Gem::Version.new('1.5')
+  Vagrant.require_plugin('vagrant-hostmanager')
+end
+
+Vagrant.configure('2') do |config|
+
+  if ENV.key? 'VAGRANT_BOX'
+    config.vm.box = ENV['VAGRANT_BOX']
+  else
+    config.vm.box = 'centos/7'
+  end
+
+  config.vm.provision "shell", path: "init.sh"
+  
+  config.hostmanager.enabled = true
+  config.hostmanager.manage_host = true
+  config.hostmanager.manage_guest = true
+
+  config.vm.define :master do |server|
+    server.vm.hostname = 'k8s-master'
+    server.vm.network :private_network, :ip => '10.0.0.21'
+    server.hostmanager.aliases = %w(master)
+    server.vm.provider "virtualbox" do |vb|
+      vb.memory = MEMORY
+    end
+  end
+  config.vm.define :node1 do |server|
+    server.vm.hostname = 'node1.k8s'
+    server.vm.network :private_network, :ip => '10.0.0.31'
+    server.vm.provider "virtualbox" do |vb|
+      vb.memory = MEMORY
+    end
+  end
+  config.vm.define :node2 do |server|
+    server.vm.hostname = 'node2.k8s'
+    server.vm.network :private_network, :ip => '10.0.0.32'
+    server.vm.provider "virtualbox" do |vb|
+      vb.memory = MEMORY
+    end
+  end
+end
