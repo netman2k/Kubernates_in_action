@@ -316,8 +316,128 @@ Kubernates 클러스터 설치는 매우 길고 다양한 방법들이 존재한
 
 > 책에서는 로컬머신에 Single-Node Kubernates 클러스터와 Google Container Engine(GKE)에 설치하는 법이 기술되어있으나 여기에서는 Appendix B에 소개하고 있는 kubeadmin 툴을 통하여 설치하는 법만 포함하도록 한다.
 
+
+#### 마스터 노드
+
+**마스터 노드 VM 켜기**
+
+```
+$ vagrant up master
+```
+
+**kubeadm을 통한 Kubernates Cluster 초기화**
+
+Vagrant를 이용하여 Private network을 Default로 사용할 경우 다음과 같이 해당 Master VM의 Private network IP를 명시해주어야한다. 그렇지 않을 경우 NAT 네트워크의 IP가 자동으로 할당되게된다.
+
+기본적으로  kubeadm을 통하여 초기화를 시도할 경우 시스템 환경을 확인하는데 이때 시스템의 Swap이 활성화되어있을 경우 다음과 같은 오류가 발생되며 설치가 되지 않는다.
  
+```
+[root@k8s-master ~]# kubeadm init --apiserver-advertise-address 10.0.0.21
+[kubeadm] WARNING: kubeadm is in beta, please do not use it for production clusters.
+[init] Using Kubernetes version: v1.8.4
+[init] Using Authorization modes: [Node RBAC]
+[preflight] Running pre-flight checks
+[preflight] Some fatal errors occurred:
+	running with swap on is not supported. Please disable swap
+[preflight] If you know what you are doing, you can skip pre-flight checks with `--skip-preflight-checks`
+```
 
+Swap 비활성화 후 초기화를 다시 진행하면 다음과 같은 메시지를 볼 수 있다. 여기서 맨 마지막 줄에 출력되는 정보를 잘 기록해둔다.
 
+```
+[root@k8s-master ~]# swapoff -a
+[root@k8s-master ~]# kubeadm init --apiserver-advertise-address 10.0.0.21
+[kubeadm] WARNING: kubeadm is in beta, please do not use it for production clusters.
+[init] Using Kubernetes version: v1.8.4
+[init] Using Authorization modes: [Node RBAC]
+[preflight] Running pre-flight checks
+[kubeadm] WARNING: starting in 1.8, tokens expire after 24 hours by default (if you require a non-expiring token use --token-ttl 0)
+...SNIP...
+You can now join any number of machines by running the following on each node
+as root:
 
- 
+  kubeadm join --token 139f8e.2bcd3e6d929b7585 10.0.0.21:6443 --discovery-token-ca-cert-hash sha256:b15b060be6e18b84ab2da9e3e1f39ed8a1cd1b35ea584cd3db922cfd80324a5b
+```
+
+**kubectl을 사용하기위한 환경설정**
+
+다음 명령을 사용하여 kubectl 명령을 사용할 수 있게 환경을 설정해준다.
+
+```
+mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
+```
+
+**노드 추가하기**
+
+최초 초기화시 표시되었던 명령을 이용하여 노드를 클러스터에 추가해준다.
+
+```
+[root@node1 ~]# swapoff -a
+[root@node1 ~]# kubeadm join --token 139f8e.2bcd3e6d929b7585 10.0.0.21:6443 --discovery-token-ca-cert-hash sha256:b15b060be6e18b84ab2da9e3e1f39ed8a1cd1b35ea584cd3db922cfd80324a5b
+[kubeadm] WARNING: kubeadm is in beta, please do not use it for production clusters.
+[preflight] Running pre-flight checks
+[discovery] Trying to connect to API Server "10.0.0.21:6443"
+[discovery] Created cluster-info discovery client, requesting info from "https://10.0.0.21:6443"
+[discovery] Requesting info from "https://10.0.0.21:6443" again to validate TLS against the pinned public key
+[discovery] Cluster info signature and contents are valid and TLS certificate validates against pinned roots, will use API Server "10.0.0.21:6443"
+[discovery] Successfully established connection with API Server "10.0.0.21:6443"
+[bootstrap] Detected server version: v1.8.4
+[bootstrap] The server supports the Certificates API (certificates.k8s.io/v1beta1)
+
+Node join complete:
+* Certificate signing request sent to master and response
+  received.
+* Kubelet informed of new secure connection details.
+
+Run 'kubectl get nodes' on the master to see this machine join.
+``` 
+
+**노드 확인하기**
+
+노드가 정상적으로 클러스터에 등록이되었는지 확인을 하기위해 다음 명령을 마스터 서버에서 실행해본다. 아래 예에서는 node1.k8s 노드가 추가되었음을 확인할 수 있다. 
+
+```
+[root@k8s-master ~]# kubectl get node
+NAME         STATUS     ROLES     AGE       VERSION
+k8s-master   NotReady   master    20m       v1.8.4
+node1.k8s    NotReady   <none>    3m        v1.8.4
+```
+
+나머지 노드도 같은 방식으로 추가해주도록 한다.
+
+**calico container network 설치하기**
+Kubernates를 지원하는 컨테이너 네트워크 목록은 다음 URL에서 확인할 수 있다.
+
+> http://kubernetes.io/docs/admin/addons/
+
+여기서는 Calico 설치하는 방법만 기술한다.
+
+**노드 확인**
+두 노드를 클러스터에 등록한 후 노드를 확인해보면 다음과같이 STATUS가 NotReady로 보일 것이다. 그 이유는 아직 오버레이(Overlay) 네트워크를 설정하지 않았기때문이다.
+
+```
+[root@k8s-master ~]# kubectl get node
+NAME         STATUS     ROLES     AGE       VERSION
+k8s-master   NotReady   master    27m       v1.8.4
+node1.k8s    NotReady   <none>    10m       v1.8.4
+node2.k8s    NotReady   <none>    2s        v1.8.4
+```
+
+다음 명령을 사용하여 Calico를 설치한 후 다시 노드를 확인해보자.
+
+```
+kubectl apply -f https://docs.projectcalico.org/v2.6/getting-started/kubernetes/installation/hosted/kubeadm/1.6/calico.yaml
+```
+
+다음과 같이 STATUS가 Ready로 변경됨을 확인할 수 있다.
+
+```
+[root@k8s-master ~]# kubectl get node
+NAME         STATUS    ROLES     AGE       VERSION
+k8s-master   Ready     master    32m       v1.8.4
+node1.k8s    Ready     <none>    14m       v1.8.4
+node2.k8s    Ready     <none>    4m        v1.8.4
+```
+
