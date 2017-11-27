@@ -319,7 +319,7 @@ Kubernates 클러스터 설치는 매우 길고 다양한 방법들이 존재한
 
 ## Kubernates 클러스터 테스팅 환경 구성하기
 
-**Vagrant 테스트 설정 clone하기**
+### Vagrant 테스트 설정 clone하기
 
 테스트를 위해 만들어놓은 Vagrant 설정 파일을 github 저
 장소에서 가져와 실행하도록 한다.
@@ -330,13 +330,13 @@ git clone https://github.com/netman2k/Kubernates_in_action
 cd Kubernates_in_action/Kubernates_Cluster
 ```
 
-**노드 VM 시작시키기**
+### 노드 VM 시작시키기
 
 ```
 $ vagrant up
 ```
 
-**kubeadm을 통한 Kubernates Cluster 초기화하기**
+### kubeadm을 통한 Kubernates Cluster 초기화하기
 
 Vagrant를 이용하여 Private network을 Default로 사용할 경우 다음과 같이 해당 Master VM의 Private network IP를 명시해주어야한다. 그렇지 않을 경우 NAT 네트워크의 IP가 자동으로 할당되게된다.
 또한 조금 후에 설치할 컨테이너 네트워크 인터페이스(CNI)를 위해 pod-network-cide을 같이 설정해 주어야한다. 여기서는 간단히 10.0.0.0/24를 설정하였다.
@@ -371,7 +371,7 @@ as root:
   kubeadm join --token 139f8e.2bcd3e6d929b7585 10.0.0.21:6443 --discovery-token-ca-cert-hash sha256:b15b060be6e18b84ab2da9e3e1f39ed8a1cd1b35ea584cd3db922cfd80324a5b
 ```
 
-**kubectl을 사용하기위한 환경설정**
+### kubectl을 사용하기위한 환경설정
 
 다음 명령을 사용하여 kubectl 명령을 사용할 수 있게 환경을 설정해준다.
 
@@ -386,7 +386,7 @@ root유저의 경우 다음과 같이 사용할 수도 있다.
 export KUBECONFIG=/etc/kubernetes/admin.conf
 ```
 
-**노드 추가하기**
+### 노드 추가하기
 
 최초 초기화시 표시되었던 명령을 이용하여 노드를 클러스터에 추가해준다.
 다음은 사용 예이니 꼭 kubectl init 명령을 통해 출력된 명령을 이용한다. 이 때 Token을 읽어버렸다면 다음 명령으로 확인할 수 있다.
@@ -420,7 +420,7 @@ Node join complete:
 Run 'kubectl get nodes' on the master to see this machine join.
 ``` 
 
-**노드 확인하기**
+### 노드 확인하기
 
 노드가 정상적으로 클러스터에 등록이되었는지 확인을 하기위해 다음 명령을 마스터 노드에서 실행해본다. 아래 예에서는 node1.k8s 노드가 추가되었음을 확인할 수 있다. 
 
@@ -433,14 +433,14 @@ node1.k8s    NotReady   <none>    3m        v1.8.4
 
 나머지 노드도 같은 방식으로 추가해주도록 한다.
 
-**calico container network 설치하기**
+### calico container network 설치하기
 Kubernates를 지원하는 컨테이너 네트워크 목록은 다음 URL에서 확인할 수 있다.
 
 > http://kubernetes.io/docs/admin/addons/
 
 여기서는 Calico 설치하는 방법만 기술한다.
 
-**노드 확인**
+### 노드 확인
 
 두 노드를 클러스터에 등록한 후 노드를 확인해보면 다음과같이 STATUS가 NotReady로 보일 것이다. 그 이유는 아직 컨테이너 네트워크(CNI) 플러그인을 설치하지 않았기때문이다. 
 
@@ -488,3 +488,78 @@ kube-system   kube-proxy-ddxdx                           1/1       Running   0  
 kube-system   kube-proxy-gz22v                           1/1       Running   0          22m
 kube-system   kube-scheduler-k8s-master                  1/1       Running   0          32s
 ```
+
+### 로컬 머신에서 Cluster 사용하기
+
+로컬 머신에서 클러스터를 사용하기 위해서는 먼저 kubectl을 로컬머신에 설치한다.
+
+> 자세한 설치법은 다음 페이지에서 확인한다.
+> https://kubernetes.io/docs/tasks/tools/install-kubectl/
+>  
+
+다음 커맨드는 kubectl을 macOS에 설치하는 방법이다.
+
+```
+$ curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/darwin/amd64/kubectl
+$ chmod +x kubectl
+$ sudo mv ./kubectl /usr/local/bin/kubectl
+```
+
+다음으로 마스터 노드에서 /etc/kubernates/admin.conf 파일을 가져와 마스터 노드에서 한 것처럼 특정 위치에 파일을 위치시키거나 KUBECONFIG 환경설정을 이용하여 kubectl을 이용할 수 있도록 한다.
+
+```
+$ export KUBECONFIG=<File location>/admin.conf
+```
+
+### kubectl을 통한 클러스터 동작 확인
+
+**kubectl cluster-info** 명령을 통해 클러스터가 동작되는 것을 확인할 수 있다.
+
+```
+$ kubectl cluster-info
+Kubernetes master is running at https://10.0.0.21:6443
+KubeDNS is running at https://10.0.0.21:6443/api/v1/namespaces/kube-system/services/kube-dns/proxy
+
+To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
+```
+
+## 클러스터 개요
+
+![](images/figure2.4.png)
+
+위 이미지는 우리에게 클러스터가 어떻게 생겼으며 어떻게 상호작용하는지에 대해 보여준다. 각 노드는 kubelet과 kube-proxy Docker 컨테이너들을 실행하며, 사용자는 kubectl 커맨드 라인 클라이언트를 통해 마스터 노드에서 실행되고 있는 Kubernates REST API 서버에게 REST 요청을 하는 것을 보여주고있다.  
+
+### 클러스터 내 노드 확인
+
+다음 명령을 통해 클러스터 내의 노드들을 확인할 수 있다.
+
+```
+$ kubectl get nodes
+NAME         STATUS    ROLES     AGE       VERSION
+k8s-master   Ready     master    2d        v1.8.4
+node1.k8s    Ready     <none>    2d        v1.8.4
+node2.k8s    Ready     <none>    2d        v1.8.4
+```
+
+### 오브젝트의 자세한 정보 확인
+
+다음 명령을 통해 노드의 자세한 정보를 확인할 수 있으며, **kubectl describe node** 와 같이 모든 노드의 정보를 확인 할 수도 있다.
+
+```
+$ kubectl describe node node2.k8s
+```
+
+
+## Kubernates에서 첫번째 app 실행하기
+
+앞에서 Docker Hub에 올린 kubia를 Kubernates에서 실행해보자.
+
+```
+$ kubectl run kubia --image=daehyung/kubia --port=8080 --generator=run/v1
+```
+
+* --image=daehyung/kubia: 실행할 컨테이너 이미지
+* --port=8080: 리스닝할 Port 번호
+* --generator: deployment 대신 Replication Controller를 사용
+
+## PODS
