@@ -529,15 +529,44 @@ To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
 minikube는 Kubernates를 로컬에서 실행하기 쉽도록해주는 도구이다.
 minikube는 단일 노드 Kubernates 클러스터를 로컬 머신의 VM에서 실행하게해준다. 
 
-**macOS에서 설치하기**
+**macOS에서 설치 및 종료**
 
 ```
 $ brew cask install minikube
 $ minikube start
+$ minikube stop
+```
+
+```
 $ kubectl get node
 NAME       STATUS    ROLES     AGE       VERSION
 minikube   Ready     <none>    3m        v1.8.0
+$ kubectl run hello-minikube --image=gcr.io/google_containers/echoserver:1.4 --port=8080
+$ kubectl expose deployment hello-minikube --type=NodePort
+$ kubectl get pod
+NAME                              READY     STATUS    RESTARTS   AGE
+hello-minikube-5bc754d4cd-7hpbp   1/1       Running   0          28s
+$ curl $(minikube service hello-minikube --url)
+CLIENT VALUES:
+client_address=172.17.0.1
+command=GET
+real path=/
+query=nil
+request_version=1.1
+request_uri=http://192.168.99.100:8080/
+
+SERVER VALUES:
+server_version=nginx: 1.10.0 - lua: 10001
+
+HEADERS RECEIVED:
+accept=*/*
+host=192.168.99.100:31223
+user-agent=curl/7.54.0
+BODY:
+-no body in request-
+$ kubectl delete deployment hello-minikube
 ```
+
 자세한 사항은 다음 링크에가서 확인한다.
 
 [minikube github](https://github.com/kubernetes/minikube)
