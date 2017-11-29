@@ -319,7 +319,9 @@ Kubernates 클러스터 설치는 매우 길고 다양한 방법들이 존재한
 
 ## Kubernates 클러스터 테스팅 환경 구성하기
 
-### Vagrant 테스트 설정 clone하기
+### kubeadm을 이용한 multi node cluster 테스트 환경 구성하기 
+
+#### Vagrant 테스트 설정 clone하기
 
 테스트를 위해 만들어놓은 Vagrant 설정 파일을 github 저
 장소에서 가져와 실행하도록 한다.
@@ -330,13 +332,13 @@ git clone https://github.com/netman2k/Kubernates_in_action
 cd Kubernates_in_action/Kubernates_Cluster
 ```
 
-### 노드 VM 시작시키기
+#### 노드 VM 시작시키기
 
 ```
 $ vagrant up
 ```
 
-### kubeadm을 통한 Kubernates Cluster 초기화하기
+#### kubeadm을 통한 Kubernates Cluster 초기화하기
 
 Vagrant를 이용하여 Private network을 Default로 사용할 경우 다음과 같이 해당 Master VM의 Private network IP를 명시해주어야한다. 그렇지 않을 경우 NAT 네트워크의 IP가 자동으로 할당되게된다.
 또한 조금 후에 설치할 컨테이너 네트워크 인터페이스(CNI)를 위해 pod-network-cide을 같이 설정해 주어야한다. 여기서는 간단히 10.0.0.0/24를 설정하였다.
@@ -371,7 +373,7 @@ as root:
   kubeadm join --token 139f8e.2bcd3e6d929b7585 10.0.0.21:6443 --discovery-token-ca-cert-hash sha256:b15b060be6e18b84ab2da9e3e1f39ed8a1cd1b35ea584cd3db922cfd80324a5b
 ```
 
-### kubectl을 사용하기위한 환경설정
+#### kubectl을 사용하기위한 환경설정
 
 다음 명령을 사용하여 kubectl 명령을 사용할 수 있게 환경을 설정해준다.
 
@@ -386,7 +388,7 @@ root유저의 경우 다음과 같이 사용할 수도 있다.
 export KUBECONFIG=/etc/kubernetes/admin.conf
 ```
 
-### 노드 추가하기
+#### 노드 추가하기
 
 최초 초기화시 표시되었던 명령을 이용하여 노드를 클러스터에 추가해준다.
 다음은 사용 예이니 꼭 kubectl init 명령을 통해 출력된 명령을 이용한다. 이 때 Token을 읽어버렸다면 다음 명령으로 확인할 수 있다.
@@ -420,7 +422,7 @@ Node join complete:
 Run 'kubectl get nodes' on the master to see this machine join.
 ``` 
 
-### 노드 확인하기
+#### 노드 확인하기
 
 노드가 정상적으로 클러스터에 등록이되었는지 확인을 하기위해 다음 명령을 마스터 노드에서 실행해본다. 아래 예에서는 node1.k8s 노드가 추가되었음을 확인할 수 있다. 
 
@@ -433,14 +435,14 @@ node1.k8s    NotReady   <none>    3m        v1.8.4
 
 나머지 노드도 같은 방식으로 추가해주도록 한다.
 
-### calico container network 설치하기
+#### calico container network 설치하기
 Kubernates를 지원하는 컨테이너 네트워크 목록은 다음 URL에서 확인할 수 있다.
 
 > http://kubernetes.io/docs/admin/addons/
 
 여기서는 Calico 설치하는 방법만 기술한다.
 
-### 노드 확인
+#### 노드 확인
 
 두 노드를 클러스터에 등록한 후 노드를 확인해보면 다음과같이 STATUS가 NotReady로 보일 것이다. 그 이유는 아직 컨테이너 네트워크(CNI) 플러그인을 설치하지 않았기때문이다. 
 
@@ -489,7 +491,7 @@ kube-system   kube-proxy-gz22v                           1/1       Running   0  
 kube-system   kube-scheduler-k8s-master                  1/1       Running   0          32s
 ```
 
-### 로컬 머신에서 Cluster 사용하기
+#### 로컬 머신에서 Cluster 사용하기
 
 로컬 머신에서 클러스터를 사용하기 위해서는 먼저 kubectl을 로컬머신에 설치한다.
 
@@ -511,7 +513,7 @@ $ sudo mv ./kubectl /usr/local/bin/kubectl
 $ export KUBECONFIG=<File location>/admin.conf
 ```
 
-### kubectl을 통한 클러스터 동작 확인
+#### kubectl을 통한 클러스터 동작 확인
 
 **kubectl cluster-info** 명령을 통해 클러스터가 동작되는 것을 확인할 수 있다.
 
@@ -522,6 +524,24 @@ KubeDNS is running at https://10.0.0.21:6443/api/v1/namespaces/kube-system/servi
 
 To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
 ```
+
+### minikube로 테스팅 환경 구성하기
+minikube는 Kubernates를 로컬에서 실행하기 쉽도록해주는 도구이다.
+minikube는 단일 노드 Kubernates 클러스터를 로컬 머신의 VM에서 실행하게해준다. 
+
+**macOS에서 설치하기**
+
+```
+$ brew cask install minikube
+$ minikube start
+$ kubectl get node
+NAME       STATUS    ROLES     AGE       VERSION
+minikube   Ready     <none>    3m        v1.8.0
+```
+자세한 사항은 다음 링크에가서 확인한다.
+
+[minikube github](https://github.com/kubernetes/minikube)
+
 
 ## 클러스터 개요
 
